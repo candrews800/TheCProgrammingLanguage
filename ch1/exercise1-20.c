@@ -17,13 +17,19 @@ main()
 {
 	int SPACES = 8;
 
-	int c, i;
+	int c, i, nt = SPACES;
 
 	while ((c = getchar()) != EOF) {
 		if (c == '\t') {
-			for (i=0;i<SPACES;++i)
+			for (i=0;i<nt;++i)
 				putchar(' ');
+
+			nt = SPACES;
+		} else if (c == '\n') {
+			nt = SPACES;
+			putchar(c);
 		} else {
+			nt = --nt == 0 ? SPACES : nt;
 			putchar(c);
 		}
 	}
