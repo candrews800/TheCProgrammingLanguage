@@ -15,7 +15,7 @@
 
 main()
 {
-	int SPACES = 4;
+	int SPACES = 8;
 
 	int c, i;
 
