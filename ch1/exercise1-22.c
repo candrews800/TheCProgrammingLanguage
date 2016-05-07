@@ -15,61 +15,51 @@
 
 #define MAXLINE	1000
 
-int _getline(char line[], int lim);
-char* fold(char line[], int columns);
-
 main()
 {
-	int length;
-	int COLUMNS = 80, TABSIZE = 8;
-	char line[MAXLINE];
+	int c, i, line_size = 0, word_size = 0;
+	int COLUMNS = 40, TABSIZE = 8;
+	char word[MAXLINE];
 
-	while ((length = _getline(line, MAXLINE)) > 0)
-		printf("%s", fold(line, COLUMNS));
-}
+	while ((c = getchar()) != EOF) {
+		if (c != ' ' && c != '\t' && c != '\n') {
+			word[word_size] = c;
+			++word_size;
 
-int _getline(char line[], int lim)
-{
-	int c, i;
+			if (word_size > 10 && line_size + word_size > COLUMNS + 5) {
+				for (i=0; i<word_size; ++i) {
+					if (line_size + 1 == COLUMNS) {
+						putchar('-');
+						putchar('\n');
+						line_size = 0;
+					}
 
-	for (i=0; i<lim-1 && (c=getchar())!=EOF && c!='\n'; ++i)
-		line[i] = c;
+					putchar(word[i]);
+					++line_size;
+				}
+				word_size = 0;
+			}
+		} else {
+			word[word_size] = '\0'; // The word is ended
 
-	if (c == '\n') {
-		line[i] = c;
-		++i;
-	}
+			if (line_size + word_size > COLUMNS) {
+				printf("\n%s%c", word, c);
+				line_size = word_size + 1;
+			} else {
+				if (c == '\n') {
+					line_size = word_size;
+				} else {
+					line_size = line_size + word_size + 1;
+				}
+				printf("%s%c", word, c);
+			}
 
-	line[i] = '\0';
-	return i;
-}
+			if (c == '\t')
+				line_size = line_size + 7;
 
-char* fold(char line[], int columns)
-{
-	int i, added_chars = 0, line_size = 0;
-	char s[MAXLINE];
-
-	for (i=0; i<MAXLINE && line[i] != '\0'; ++i) {
-		++line_size;
-
-		if (line[i] == '\n') {
-			line_size = 0;
+			word_size = 0;
 		}
-
-		s[i+added_chars] = line[i];
-
-		if (line_size > columns) {
-			++added_chars;
-			s[i+added_chars] = '\n';
-			line_size = 0;
-		}
 	}
 
-	s[i+added_chars] = '\0';
-
-	for (i=0; i<MAXLINE; i++) {
-		line[i] = s[i];
-	}
-
-	return line;
+	putchar('\n');
 }
