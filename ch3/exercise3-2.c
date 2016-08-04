@@ -16,7 +16,7 @@ void deescape(char s[], char t[]);
 
 #include <stdio.h>
 
-main()
+int main()
 {
 	char s[1000] = "This \n has \n new \n lines.";
 	char t[1000];
