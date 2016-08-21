@@ -28,7 +28,6 @@ struct key {
     char *word;
     int count;
 } keytab[] = {
-        "_int", 0,
         "auto", 0,
         "break", 0,
         "case", 0,
@@ -41,6 +40,7 @@ struct key {
         "int", 0,
         "return", 0,
         "signed", 0,
+        "sizeof", 0,
         "struct", 0,
         "unsigned", 0,
         "void", 0,
@@ -58,8 +58,6 @@ int main()
     char word[MAXWORD];
     struct key *p;
 
-    int _int;
-
     while (getword(word, MAXWORD) != EOF)
         if (isAlphaUnderscore(word[0]))
             if ((p=binsearch(word, keytab, NKEYS)) != NULL)
@@ -73,23 +71,90 @@ int main()
 /* getword: get next word or character from input */
 int getword(char *word, int lim)
 {
-    int c, getch(void);
+    static int inBlockComment = 0;
+    static int inLineComment = 0;
+    static int inQuote = 0;
+    static int lastC = EOF;
+
+    int c, getch(void), turnedOff = 0;
     void ungetch(int);
     char *w = word;
 
     while (isspace(c = getch()))
-        ;
+        if (c == '\n' && (inLineComment || inQuote)) {
+            inLineComment = 0;
+            inQuote = 0;
+        }
+
     if (c != EOF)
         *w++ = c;
-    if (!isAlphaUnderscore(c)) {
+
+    if (lastC == '/' && c == '*') {
+        inBlockComment = 1;
+    }
+
+    if (lastC == '/' && c == '/') {
+        inLineComment = 1;
+    }
+
+    if (lastC == '*' && c == '/' && inBlockComment)
+        inBlockComment = 0;
+
+    if (c == '"') {
+        inQuote = 1;
+    }
+
+    lastC = c;
+
+    if (!isAlphaUnderscore(c) || inQuote || inLineComment || inBlockComment) {
         *w = '\0';
         return c;
     }
-    for ( ; --lim > 0; w++)
-        if (!isAlphaUnderscore(*w = getch())) {
+    for ( ; --lim > 0; w++) {
+        c = *w = getch();
+        if (c == '\n') {
+            inLineComment = 0;
+            inQuote = 0;
+        }
+
+        if (c == '"' && inQuote && !inBlockComment) {
+            inQuote = 0;
+            turnedOff = 1; // We need make sure we signal this quote is the end
+        }
+
+        if (lastC == '*' && c == '/' && inBlockComment)
+            inBlockComment = 0;
+
+        if (inQuote || inLineComment || inBlockComment) {
+            word[0] = '\0';
+            return word[0];
+        }
+
+        if (lastC == '/' && c == '*') {
+            inBlockComment = 1;
+        }
+
+        if (lastC == '/' && c == '/') {
+            inLineComment = 1;
+        }
+
+        if (c == '"' && !turnedOff) {
+            inQuote = 1;
+        }
+
+        if (inQuote || inLineComment || inBlockComment) {
+            *(--w) = '\0';
+            return word[0];
+        }
+
+        lastC = c;
+        turnedOff = 0;
+
+        if (!isAlphaUnderscore(c)) {
             ungetch(*w);
             break;
         }
+    }
     *w = '\0';
     return word[0];
 }
